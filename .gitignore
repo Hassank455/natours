@@ -1,5 +1,5 @@
 # Node.js
-node_modules/
+node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -19,7 +19,7 @@ logs
 Thumbs.db
 
 # Env files
-.env
+*.env
 .env.*
 
 # Coverage

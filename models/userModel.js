@@ -58,6 +58,16 @@ userSchema.pre('save', async function (next) {
   this.passwordConfirm = undefined;
   next();
 });
+// we use pre save hook instead of pre update hook because findByIdAndUpdate() and other update methods are not document middleware, they are query middleware, and in query middleware 'this' points to the current query, not the document being updated
+// this middleware runs before the document is saved to the database
+userSchema.pre('save', function (next) {
+  // if password is not modified or the document is new, we don't need to update the passwordChangedAt field
+  if (!this.isModified('password') || this.isNew) {
+    return next();
+  }
+  this.passwordChangedAt = Date.now() - 1000; // sometimes saving to DB is slower than issuing JWT, so we set the time a bit in the past
+  next();
+});
 
 userSchema.methods.correctPassword = async function (
   candidatePassword,
@@ -73,9 +83,6 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
       this.passwordChangedAt.getTime() / 1000,
       10,
     );
-    console.log('------------------');
-    console.log(JWTTimestamp < changedTimestamp);
-    console.log(changedTimestamp, JWTTimestamp);
     return JWTTimestamp < changedTimestamp;
   }
   // False means NOT changed
