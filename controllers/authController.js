@@ -14,6 +14,24 @@ const signToken = (id) =>
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
 
+  // cookie is sending in every response
+  // secure: true means the cookie will only be sent on an encrypted connection (https)
+  // httpOnly: true means the cookie cannot be accessed or modified by the browser
+  const cookieOptions = {
+    expires: new Date(
+      // * 24 * 60 * 60 * 1000 to convert days to milliseconds
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ),
+    httpOnly: true,
+    // secure: true // only send cookie on https
+  };
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  res.cookie('jwt', token, cookieOptions);
+
+
+  // Remove password from output
+  user.password = undefined;
+
   res.status(statusCode).json({
     status: 'success',
     token,
@@ -85,8 +103,9 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
-exports.restrictTo = (...roles) => {
-  return (req, res, next) => {
+exports.restrictTo =
+  (...roles) =>
+  (req, res, next) => {
     // roles ['admin', 'lead-guide']. role='user'
     // req.user.role is coming from protect
     if (!roles.includes(req.user.role)) {
@@ -96,7 +115,6 @@ exports.restrictTo = (...roles) => {
     }
     next();
   };
-};
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) Get user based on POSTed email

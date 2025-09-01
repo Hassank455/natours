@@ -7,9 +7,13 @@ class APIFeatures {
   }
 
   filter() {
-    const rawQuery = this.req.originalUrl.split('?')[1];
-    const queryObj = qs.parse(rawQuery);
-    // وهذا غير منطقي لأن page, sort, limit, fields ليست فلاتر، وإنما خيارات تحكم في النتيجة النهائية.
+    // const rawQuery = this.req.originalUrl.split('?')[1];
+    // const queryObj = qs.parse(rawQuery);
+    // // وهذا غير منطقي لأن page, sort, limit, fields ليست فلاتر، وإنما خيارات تحكم في النتيجة النهائية.
+
+    // نشتغل مباشرة على req.query
+    const queryObj = { ...this.req.query };
+    // page, sort, limit, fields ليست فلاتر، وإنما خيارات للتحكّم في شكل النتيجة
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
     excludedFields.forEach((el) => delete queryObj[el]);
 
@@ -25,7 +29,7 @@ class APIFeatures {
   }
 
   sort() {
-    if (this.req.query.sort) {
+    if (this.req?.query?.sort) {
       const sortBy = this.req.query.sort.split(',').join(' ');
       this.query = this.query.sort(sortBy);
     } else {
@@ -35,7 +39,7 @@ class APIFeatures {
   }
 
   limitFields() {
-    if (this.req.query.fields) {
+    if (this.req?.query?.fields) {
       const fields = this.req.query.fields.split(',').join(' ');
       this.query = this.query.select(fields);
     } else {
@@ -46,8 +50,8 @@ class APIFeatures {
 
   paginate() {
     // *1 convert string to number
-    const page = this.req.query.page * 1 || 1;
-    const limit = this.req.query.limit * 1 || 100;
+    const page = this.req?.query?.page * 1 || 1;
+    const limit = this.req?.query?.limit * 1 || 100;
     const skip = (page - 1) * limit;
 
     this.query = this.query.skip(skip).limit(limit);
