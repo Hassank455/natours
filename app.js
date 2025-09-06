@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
@@ -15,8 +16,15 @@ const reviewRouter = require('./routes/reviewRoutes');
 
 const app = express();
 
+app.set('view engine', 'pug');
+// we use path.join to ensure the correct path is set regardless of the operating system
+// example: Windows uses backslashes (\) while Unix-based systems use forward slashes (/)
+app.set('views', path.join(__dirname, 'views'));
+
 // 1) GLOBAL MIDDLEWARES
 
+// Serving static files
+app.use(express.static(path.join(__dirname, 'public')));
 // To be able to see the query parameters in req.query in a middleware
 // because in Express 5, req.query is read-only by default
 app.use((req, res, next) => {
@@ -109,9 +117,6 @@ app.use(
   }),
 );
 
-// Serving static files
-app.use(express.static(`${__dirname}/public`));
-
 // Middleware for all requests
 // app.use((req, res, next) => {
 //   console.log('Hello from the middleware');
@@ -122,6 +127,11 @@ app.use(express.static(`${__dirname}/public`));
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
+});
+
+// 3) ROUTES
+app.get('/', (req, res) => {
+  res.status(200).render('base');
 });
 
 app.use('/api/v1/tours', tourRouter);
@@ -138,3 +148,5 @@ module.exports = app;
 
 //? this is for generating random string
 // node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+
+// https://documenter.getpostman.com/view/10984381/2sB3Hkqfvp#c24d1899-11e3-40c4-bf9f-aa117bb316e2

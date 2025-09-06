@@ -35,6 +35,7 @@ const tourSchema = new mongoose.Schema(
       default: 4.5,
       min: [1, 'Rating must be above 1.0'],
       max: [5, 'Rating must be below 5.0'],
+      set: (val) => Math.round(val * 10) / 10, // 4.6666, 46.666, 47, 4.7
     },
     ratingQuantity: {
       type: Number,
@@ -115,6 +116,18 @@ const tourSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   },
 );
+
+// 1 for ascending and -1 for descending
+// tourSchema.index({ price: 1 });
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+tourSchema.index({ slug: 1 });
+// this index is for geospatial queries
+// what does 2dsphere do?
+// A 2dsphere index supports queries that calculate geometries on an earth-like sphere.
+// The 2dsphere index supports queries that calculate geometries on an earth-like sphere.
+// You can use the 2dsphere index to support queries that calculate distances, intersections, and containment.
+tourSchema.index({ startLocation: '2dsphere' });
+
 // Virtual Properties
 tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
@@ -175,11 +188,12 @@ tourSchema.post(/^find/, (docs, next) => {
 });
 
 // AGGREGATION MIDDLEWARE
-tourSchema.pre('aggregate', function (next) {
-  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
-  console.log(this.pipeline());
-  next();
-});
+// to exclude secret tours from aggregation results
+// tourSchema.pre('aggregate', function (next) {
+//   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+//   console.log(this.pipeline());
+//   next();
+// });
 
 const Tour = mongoose.model('Tour', tourSchema);
 
